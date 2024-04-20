@@ -99,6 +99,7 @@ plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
 plt.title('Present on all 5 social networks \n % vs. the total of all categories')
 plt.show()
 
+# print(records[1].main_address["country_name"])
 
 
 
