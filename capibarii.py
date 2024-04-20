@@ -1,4 +1,9 @@
 
+from asyncio.windows_events import NULL
+from logging.handlers import RotatingFileHandler
+from tkinter.filedialog import SaveFileDialog
+import matplotlib
+from matplotlib import pyplot as plt
 import pandas
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
@@ -15,18 +20,91 @@ class DataRecord:
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
+def to_list(entry):
+    if isinstance(entry, np.ndarray):
+        return entry.tolist()
+    return entry
+
 df = pandas.read_parquet("data/part-00000-ac5c3a2a-c89d-4817-8a00-1ba717b8f279-c000.snappy.parquet", engine = "pyarrow")
-# print(data.dtypes)
+df = df.applymap(to_list)
+
+# print(df.dtypes)
 
 # print(data)
 
 # np.savetxt(r'np.txt', df.values, fmt='%s', delimiter=' ', encoding='utf-8')
 
 records = [DataRecord(**row.to_dict()) for index, row in df.iterrows()]
-""" # records e o lista de obiecte; fiecare obiect e un rand din DataFrame, avand ca atribute coloanele
-
+# records e o lista de obiecte; fiecare obiect e un rand din DataFrame, avand ca atribute coloanele
 # print(records[11].legal_names[0])
+# print("###", records[3].twitter, "###")
 
+def normalize_to_100(values):
+    total = sum(values)
+    return [(x / total) * 100 for x in values]
+
+def count_matching_records(records, equal_conditions=None, non_empty_conditions=None):
+    """
+    Count records that match given conditions.
+    
+    :param records: List of records, where each record is expected to be an object with attributes.
+    :param equal_conditions: Dictionary where keys are attribute names and values are the values those attributes should equal.
+    :param non_empty_conditions: List of attribute names that should be non-empty (not None and not empty).
+    :return: Count of records matching all conditions.
+    """
+    if equal_conditions is None:
+        equal_conditions = {}
+    if non_empty_conditions is None:
+        non_empty_conditions = []
+
+    count = 0
+    total = 0
+    for record in records:
+        if all(getattr(record, attr) == value for attr, value in equal_conditions.items()):
+            total += 1
+            if all(getattr(record, attr) not in [None, ''] for attr in non_empty_conditions):
+                count += 1
+    return count/total
+
+# domeniu vs. social media
+sustainability = ['Engineering & Construction Services', "Professional Associations", "Health Care Delivery", "Agricultural Products", "Meat, Poultry & Dairy", "Food Retailers & Distributors"]
+social_media_sites = ['facebook', 'twitter', 'instagram', 'linkedin', 'youtube']
+results = []
+
+for s in sustainability:
+    result = count_matching_records(records, equal_conditions={'sustainable_industry': s}, non_empty_conditions=social_media_sites)
+    results.append(result*100)
+
+plt.figure(figsize=(10,5))
+plt.bar(sustainability, results)
+plt.title('Present on all 5 social networks \n % vs. total of category')
+plt.xticks(rotation=45, ha = 'right', fontsize=10)  # Ensure x-axis labels are horizontal for readability
+plt.tight_layout()  # Adjust layout
+plt.show()
+
+# 
+sustainability = ['Engineering & Construction Services', "Professional Associations", "Health Care Delivery", "Agricultural Products", "Meat, Poultry & Dairy", "Food Retailers & Distributors"]
+social_media_sites = ['facebook', 'twitter', 'instagram', 'linkedin', 'youtube']
+pies = []
+
+for s in sustainability:
+    result = count_matching_records(records, equal_conditions={'sustainable_industry': s}, non_empty_conditions=social_media_sites)
+    pies.append(result)
+
+pies = normalize_to_100(pies)
+
+plt.figure(figsize=(6, 6))
+plt.pie(pies, labels=sustainability, autopct='%1.1f%%', startangle=90, colors=['gold', 'yellowgreen', 'lightcoral', 'skyblue', 'red', 'darkgreen'])
+plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+plt.title('Present on all 5 social networks \n % vs. the total of all categories')
+plt.show()
+
+
+
+
+
+
+"""
 stop_words = set(stopwords.words('english'))
 lemmatizer = WordNetLemmatizer()
 
@@ -69,9 +147,9 @@ df['cluster'] = clusters
 for i in range(k):
     print(f"Cluster {i}:")
     print(df[df['cluster'] == i]['keywords'].head(10), "\n")
- """
+"""
 
-df['keywords'] = df['keywords'].astype(str)
+""" df['keywords'] = df['keywords'].astype(str)
 # Convert keywords into TF-IDF vectors
 vectorizer = TfidfVectorizer()
 X = vectorizer.fit_transform(df['keywords'])
@@ -86,3 +164,4 @@ clusters = hdbscan_cluster.fit_predict(X)
 # Add cluster labels to the DataFrame
 df['cluster'] = clusters
 print(df)
+"""
