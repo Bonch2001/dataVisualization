@@ -19,11 +19,11 @@ def generate_insight(prompt, model="davinci-002", max_tokens=100):
         "Content-Type": "application/json",
     }
     data = {
-        "model": model,         # Choose model, e.g., "text-davinci-002" for GPT-3.5 or other available models
-        "prompt": prompt,       # Your input text to the model
-        "max_tokens": max_tokens,  # Maximum number of tokens to generate
+        "model": model,        
+        "prompt": prompt,       
+        "max_tokens": max_tokens,
     }
-    url = f'https://api.openai.com/v1/completions'  # Use this endpoint
+    url = f'https://api.openai.com/v1/completions' 
     response = requests.post(url, headers=headers, json=data)
     return response.json()
 
